@@ -1,0 +1,19 @@
+{
+	"manifest_version": 3,
+	"name": "Meet Video Capture",
+	"version": "1.0",
+	"description": "test google meet video tag",
+	"action": {
+		"default_popup": "popup.html"
+	},
+	"permissions": [
+		"scripting",
+		"activeTab"
+	],
+	"content_scripts": [
+		{
+			"matches": ["https://meet.google.com/*"],
+			"js": ["content.js"]
+		}
+	]
+}

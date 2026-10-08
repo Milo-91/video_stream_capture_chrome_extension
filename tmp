@@ -1,0 +1,20 @@
+	/*
+	const tab = await getCurrentTab();
+	await chrome.scripting.executeScript({
+		target: {
+			tabId: tab.id
+		},
+		files: ['content.js']
+	});
+	await chrome.tabs.sendMessage(tab.id, {command: 'stop'});
+	*/
+
+/*
+async function runContentFunction(func) {
+	const [tab] = await chrome.tabs.query({
+		active: true,
+		currentWindow: true
+	});
+}
+*/
+
