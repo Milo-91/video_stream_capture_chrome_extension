@@ -6,73 +6,64 @@ console.log("=================================");
 
 let recorder = null;
 let chunks = [];
+let pc = null;
+let stream = null;
+let isStarting = false;
 
-function startRecording() {
+async function startRecording(){
 	const video = document.querySelector('video'); // capture html tag <video>
 	
+	// Avoid repeated start
+	if(pc !== null || isStarting){
+		console.log("Already started");
+		return;
+	}
 	// ensure we capture the video track
 	if(!video){
 		console.error("No video found QQ");
 	}else{
 		console.log("Video found", video);
 		console.log("Resolution:", video.videoWidth, video.videoHeight);
-	
-		const stream = video.captureStream();
-	
+		stream = video.captureStream();
 		console.log("Stream:", stream);
-		console.log("Video tracks:", stream.getVideoTracks());
-	
-		// start recording
-		console.log(MediaRecorder.isTypeSupported('video/webm;codecs=vp8'))
-		recorder = new MediaRecorder(stream, {
-			mimeType: "video/webm;codecs=vp8"
+		console.log("Video tracks:", stream.getVideoTracks());	
+
+		// WebRTC connection
+		pc = new RTCPeerConnection();
+		for(const track of stream.getTracks()){
+			pc.addTrack(track, stream);
+		}
+
+		const offer = await pc.createOffer();
+		await pc.setLocalDescription(offer);
+
+		// ---signaling---
+		const answer = await chrome.runtime.sendMessage({
+			type: 'offer',
+			sdp: pc.localDescription.sdp
 		});
+		// ---establish WebRTC connection---
+		await pc.setRemoteDescription(answer);
+		console.log('WebRTC connection established')
 	
-		recorder.ondataavailable = (event) => {
-			if(event.data.size > 0) {
-				chunks.push(event.data);
-			}
-		};
-	
-		recorder.onstop = () => {
-			console.log("recording stopped");
-			const blob = new Blob(chunks, {
-				type: "video/webm"
-			});
-	
-			const url = URL.createObjectURL(blob);
-	
-			const a = document.createElement("a");
-	
-			a.href = url;
-			a.download = "meet-recording.webm";
-	
-			document.body.appendChild(a);
-			a.click();
-			a.remove();
-	
-			URL.revokeObjectURL(url);
-	
-			console.log("video downloaded");
-		};
-	
-		recorder.start();
-	
-		console.log('recording started')
+		isStarting = true;
+		console.log('streaming started')
 	}
 }
 
 function stopRecording(){
-	console.log('stop recording')
-	if(!recorder){
-		console.log('no recorder');
-		return;
+	// delete stream
+	if(stream){
+		// stream.getTracks().forEach(track => track.stop());
+		stream = null;
 	}
-
-	if(recorder.state !== "inactive"){
-		recorder.stop();
-		console.log('stop recorder');
+	// delete pc
+	if(pc){
+		pc.close()
+		pc = null;
 	}
+	console.log('Streaming stopped')
+	isStarting = false;
 }
 
 chrome.runtime.onMessage.addListener((message) => {

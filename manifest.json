@@ -7,9 +7,14 @@
 		"default_popup": "popup.html"
 	},
 	"permissions": [
-		"scripting",
 		"activeTab"
 	],
+	"host_permissions": [
+		"http://127.0.0.1:8080/"
+	],
+	"background": {
+		"service_worker": "background.js"
+	},
 	"content_scripts": [
 		{
 			"matches": ["https://meet.google.com/*"],
