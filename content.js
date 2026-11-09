@@ -22,17 +22,30 @@ async function startRecording(){
 	if(!video){
 		console.error("No video found QQ");
 	}else{
+		// check video resize event
+		video.addEventListener("resize", () => {
+			console.log("Video resolution changed")
+			console.log("Resolution:", video.videoWidth, video.videoHeight)
+		});
 		console.log("Video found", video);
 		console.log("Resolution:", video.videoWidth, video.videoHeight);
+		// video capture
 		stream = video.captureStream();
+
 		console.log("Stream:", stream);
 		console.log("Video tracks:", stream.getVideoTracks());	
 
 		// WebRTC connection
 		pc = new RTCPeerConnection();
 		for(const track of stream.getTracks()){
-			pc.addTrack(track, stream);
+			const sender = pc.addTrack(track, stream);
+			if(track.kind === 'video'){
+				const params = sender.getParameters();
+				params.degradationPreference = "maintain-resolution";
+				await sender.setParameters(params);
+			}
 		}
+
 
 		const offer = await pc.createOffer();
 		await pc.setLocalDescription(offer);
